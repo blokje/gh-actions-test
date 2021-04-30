@@ -15,15 +15,13 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       - name: Rebase develop
-        env:
-          GH_API_URI: "https://api.github.com"
-          GH_API_HEADER: "Accept: application/vnd.github.v3+json"
-          GH_API_AUTH_HEADER: "Authorization: token ${{ env.GITHUB_TOKEN }}"
         run: |
           set -o xtrace
 
-          set | grep ^GH_
-
+          GH_API_URI="https://api.github.com"
+          GH_API_HEADER="Accept: application/vnd.github.v3+json"
+          GH_API_AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
+          
           USER_LOGIN=$(jq -r ".comment.user.login" "$GITHUB_EVENT_PATH")
           user_resp=$(curl -X GET -s -H "${GH_API_AUTH_HEADER}" -H "${GH_API_HEADER}" \
             "${GH_API_URI}/users/${USER_LOGIN}")
