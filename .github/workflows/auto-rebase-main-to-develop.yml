@@ -1,3 +1,4 @@
+name: "Ensure develop branch is rebased with main"
 on:
   push:
     branches:
