@@ -13,7 +13,7 @@
 # releases
 #
 # This github action should ensure the right branch is enforced for GH actions
-
+name: Ensure PR is linked to right base
 on:
   pull_request:
     types: [opened, edited, reopened]
