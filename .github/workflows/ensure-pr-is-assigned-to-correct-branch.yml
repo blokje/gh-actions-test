@@ -18,7 +18,7 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
     branches:
-    - "master"
+    - "main"
     - "develop"
     - "release/**"
 
