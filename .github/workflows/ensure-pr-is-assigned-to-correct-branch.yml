@@ -31,6 +31,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        set -o xtrace
         PR_NUMBER=$(jq -r ".pull_request.number" "$GITHUB_EVENT_PATH")
         if [[ "$PR_NUMBER" == "null" ]]; then
           PR_NUMBER=$(jq -r ".issue.number" "$GITHUB_EVENT_PATH")
