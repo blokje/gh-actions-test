@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  rebase:
+    name: Rebase develop
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the latest code
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Rebase develop
+        run: |
+          set -o xtrace
+          git checkout develop
+          git rebase origin/main
