@@ -63,10 +63,18 @@ jobs:
           exit 0
         fi
 
+        comment() {
+           curl -s -X POST  -H "Authorization: token $GITHUB_TOKEN" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  -d "{\"body\": \"$1\"}" \
+                  https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments
+        }
+
         if [[ "$HEAD_BRANCH" =~ ^(feature|bug)\/ ]]; then
           echo "Ensure merge to develop"
           if [[ "$BASE_BRANCH" != "develop" ]]; then
-            echo "Change branch to develop"
+            echo "::warning ::Trying to merge to wrong branch, $BASE_BRANCH, switching to develop"
+            comment "Wrong branch selected, switching to \`develop\`"
           fi
           exit 0
         fi
