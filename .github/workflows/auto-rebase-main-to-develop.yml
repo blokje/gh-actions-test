@@ -23,6 +23,9 @@ jobs:
           GH_API_URI="https://api.github.com"
           GH_API_HEADER="Accept: application/vnd.github.v3+json"
           GH_API_AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
+
+          echo $GITHUB_EVENT_PATH
+          exit 0
           
           USER_LOGIN=$(jq -r ".comment.user.login" "$GITHUB_EVENT_PATH")
           user_resp=$(curl -X GET -s -H "${GH_API_AUTH_HEADER}" -H "${GH_API_HEADER}" \
