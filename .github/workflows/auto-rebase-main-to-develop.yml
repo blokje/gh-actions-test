@@ -19,3 +19,4 @@ jobs:
           set -o xtrace
           git checkout develop
           git rebase origin/main
+          git push origin develop
