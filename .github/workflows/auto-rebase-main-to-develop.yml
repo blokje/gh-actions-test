@@ -33,8 +33,9 @@ jobs:
 
           # Checkout or create a new develop branch
           git checkout develop || git checkout -b develop origin/main
-          git rebase origin/main
 
           git config --global user.email "$PUSHER_EMAIL"
           git config --global user.name "$PUSHER_NAME (Rebase PR Action)"
+          
+          git rebase origin/main
           git push origin develop
