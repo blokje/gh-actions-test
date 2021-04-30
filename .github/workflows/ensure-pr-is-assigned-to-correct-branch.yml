@@ -72,7 +72,7 @@ jobs:
           curl -X POST  -H "Authorization: token $GITHUB_TOKEN" \
                   -H "Accept: application/vnd.github.v3+json" \
                   -d '{"body":"body"}' \
-                  "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/comments"
+                  https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments
           exit 1
         fi
         # -d '{"body": "Direct merge from `develop` to `main` is not permitted! Create a `release/` branch first!"}' \
