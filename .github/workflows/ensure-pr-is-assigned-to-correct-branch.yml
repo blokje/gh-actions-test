@@ -1,0 +1,31 @@
+# We have a certain policy on how we create branch names and where to merge them to. The policy is as
+# following
+#
+# A branch name shuold be in the form of {token}/SCRIPTIX-{id}?/{description}
+# 
+# Where token can be one of:
+#   - feature: Task to be merged into `develop`
+#   - hotfix:  Critical bug fix merged into `main`
+#   - release: Merge for `develop` to `main`
+#   - bug:     Issue to be fixed into `develop`
+# 
+# Hotfixes are automatically rebased into `develop` once they are comitted to main. The same with
+# releases
+# 
+# This github action should ensure the right branch is enforced for GH actions
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+
+  ensure-pr-target:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Print hello"
+        run: echo "Hello"
+      
+
+      - name: "Print environment"
+        run: set | grep GITHUB
