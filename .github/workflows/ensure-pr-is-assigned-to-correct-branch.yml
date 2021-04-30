@@ -107,10 +107,10 @@ jobs:
 
           if [[ "$BASE_BRANCH" == "main" ]]l; then
             echo "::error ::Direct merging to main is only permitted from release or hotfix, closing PR"
-            reject_pr "Direct merge from \`$HEAD_BRANCH\` to `main` is not permitted! Create a \`release/\` or \`hotfix/\` branch first!'
+            reject_pr "Direct merge from \`$HEAD_BRANCH\` to \`main\` is not permitted! Create a \`release/\` or \`hotfix/\` branch first!'
           fi
 
           if [[ "$BASE_BRANCH" == "develop" ]]l; then
             echo "::error ::Direct merging to develop is only permitted from feature or bug, closing PR"
-            reject_pr "Direct merge from \`$HEAD_BRANCH\` to `develop` is not permitted! Create a \`feature/\` or \`bug/\` branch first!'
+            reject_pr "Direct merge from \`$HEAD_BRANCH\` to \`develop\` is not permitted! Create a \`feature/\` or \`bug/\` branch first!'
           fi
