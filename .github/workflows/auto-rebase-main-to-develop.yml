@@ -17,6 +17,7 @@ jobs:
       - name: Rebase develop
         run: |
           set -o xtrace
-          git checkout develop
+          # Checkout or create a new develop branch
+          git checkout develop || git checkout -b develop origin/main
           git rebase origin/main
           git push origin develop
