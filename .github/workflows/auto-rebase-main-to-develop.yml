@@ -18,7 +18,7 @@ jobs:
         env:
           GH_API_URI: "https://api.github.com"
           GH_API_HEADER: "Accept: application/vnd.github.v3+json"
-          GH_API_AUTH_HEADER: "Authorization: token $GITHUB_TOKEN"
+          GH_API_AUTH_HEADER: "Authorization: token ${{ env.GITHUB_TOKEN }}"
         run: |
           set -o xtrace
 
