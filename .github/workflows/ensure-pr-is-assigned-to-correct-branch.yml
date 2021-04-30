@@ -54,51 +54,63 @@ jobs:
           # Destination branch
           PR_TITLE=$(echo "$pr_resp" | jq -r .title)
 
-          if [[ "$HEAD_BRANCH" =~ ^(release|hotfix)\/ ]]; then
-            echo "Ensure merge to main"
-            if [[ "$BASE_BRANCH" != "master" ]]; then
-              echo "Change branch"
-            fi
-            exit 0
-          fi
 
           comment() {
-             curl -s -o /dev/null -X POST  -H "Authorization: token $GITHUB_TOKEN" \
-                    -H "Accept: application/vnd.github.v3+json" \
-                    -d "{\"body\": \"$1\"}" \
-                    https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments
+            curl -s -o /dev/null -X POST  -H "Authorization: token $GITHUB_TOKEN" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  -d "{\"body\": \"$1\"}" \
+                  https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments
           }
 
-          if [[ "$HEAD_BRANCH" =~ ^(feature|bug)\/ ]]; then
-            echo "Ensure merge to develop"
-            if [[ "$BASE_BRANCH" != "develop" ]]; then
-              echo "::warning ::Trying to merge to wrong branch, $BASE_BRANCH, switching to develop"
-              comment "Wrong branch selected, switching to \`develop\`"
+          switch_base() {
+            NEW_BASE="$1"
+            curl -s \
+              -X PATCH \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
+              -d "{\"base\": \"$NEW_BASE\"}"
+          }
 
-              curl -s \
-                -X PATCH \
-                -H "Authorization: token $GITHUB_TOKEN" \
-                -H "Accept: application/vnd.github.v3+json" \
-                "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
-                -d '{"base": "develop"}'
-            fi
-            exit 0
-          fi
-
-          if [[ "$HEAD_BRANCH" == "develop" ]] && [[ "$BASE_BRANCH" == "main" ]]; then
-            echo "::error ::Merge from develop to main forbidden, closing PR"
-            curl -s -X POST  -H "Authorization: token $GITHUB_TOKEN" \
-                    -H "Accept: application/vnd.github.v3+json" \
-                    -d '{"body": "Direct merge from `develop` to `main` is not permitted! Create a `release/` branch first!"}' \
-                    https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments
-
+          reject_pr() {
+            comment "$@"
             NEW_TITLE=$( echo "$PR_TITLE" | sed 's/^\[REJECTED\]\s*//')
-
             curl -s \
               -X PATCH \
               -H "Authorization: token $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github.v3+json" \
               "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
               -d "{\"title\":\"[REJECTED] $NEW_TITLE\", \"state\": \"closed\"}"
-            exit 1
+          }
+
+          # Ensure release and hotfix are merged to
+          if [[ "$HEAD_BRANCH" =~ ^(release|hotfix)\/ ]]; then
+            echo "Ensure merge to main"
+            if [[ "$BASE_BRANCH" != "main" ]]; then
+              echo "::warning ::Trying to merge to wrong branch, $BASE_BRANCH, switching to main"
+              comment "Wrong branch selected, switching to \`main\`"
+              switch_base "main"
+            fi
+            exit 0
+          fi
+
+          # Ensure feature and bug are merged to develop
+          if [[ "$HEAD_BRANCH" =~ ^(feature|bug)\/ ]]; then
+            echo "Ensure merge to develop"
+            if [[ "$BASE_BRANCH" != "develop" ]]; then
+              echo "::warning ::Trying to merge to wrong branch, $BASE_BRANCH, switching to develop"
+              comment "Wrong branch selected, switching to \`develop\`"
+              switch_base "develop"
+            fi
+            exit 0
+          fi
+
+          if [[ "$BASE_BRANCH" == "main" ]]l; then
+            echo "::error ::Direct merging to main is only permitted from release or hotfix, closing PR"
+            reject_pr "Direct merge from \`$HEAD_BRANCH\` to `main` is not permitted! Create a \`release/\` or \`hotfix/\` branch first!'
+          fi
+
+          if [[ "$BASE_BRANCH" == "develop" ]]l; then
+            echo "::error ::Direct merging to develop is only permitted from feature or bug, closing PR"
+            reject_pr "Direct merge from \`$HEAD_BRANCH\` to `develop` is not permitted! Create a \`feature/\` or \`bug/\` branch first!'
           fi
