@@ -73,17 +73,17 @@ jobs:
 
         if [[ "$HEAD_BRANCH" == "develop" ]] && [[ "$BASE_BRANCH" == "main" ]]; then
           echo "::error ::Merge from develop to main forbidden, closing PR"
-          curl -X POST  -H "Authorization: token $GITHUB_TOKEN" \
+          curl -s -X POST  -H "Authorization: token $GITHUB_TOKEN" \
                   -H "Accept: application/vnd.github.v3+json" \
                   -d '{"body": "Direct merge from `develop` to `main` is not permitted! Create a `release/` branch first!"}' \
                   https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments
 
           NEW_TITLE=$( echo "$PR_TITLE" | sed 's/^\[REJECTED\]\s*//')
 
-          curl \
+          curl -s \
             -X PATCH \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/$GITHUB_REPOSITORY/pulls/$PR_NUMBER \
+            https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER \
             -d '{"title":"[REJECTED] ${NEW_TITLE}", "state": "closed"}'
           exit 1
         fi
