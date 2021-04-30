@@ -2,97 +2,103 @@
 # following
 #
 # A branch name shuold be in the form of {token}/SCRIPTIX-{id}?/{description}
-# 
+#
 # Where token can be one of:
 #   - feature: Task to be merged into `develop`
 #   - hotfix:  Critical bug fix merged into `main`
 #   - release: Merge for `develop` to `main`
 #   - bug:     Issue to be fixed into `develop`
-# 
+#
 # Hotfixes are automatically rebased into `develop` once they are comitted to main. The same with
 # releases
-# 
+#
 # This github action should ensure the right branch is enforced for GH actions
 
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
     branches:
-    - "main"
-    - "develop"
-    - "release/**"
+      - "main"
+      - "develop"
+      - "release/**"
 
 jobs:
-
   ensure-pr-target:
     runs-on: "ubuntu-latest"
     steps:
-    - name: Ensure PR is assigned to correct target
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        
-        PR_NUMBER=$(jq -r ".pull_request.number" "$GITHUB_EVENT_PATH")
-        if [[ "$PR_NUMBER" == "null" ]]; then
-          PR_NUMBER=$(jq -r ".issue.number" "$GITHUB_EVENT_PATH")
-        fi
-        if [[ "$PR_NUMBER" == "null" ]]; then
-          echo "Failed to determine PR Number."
-          exit 1
-        fi
-        echo "Collecting information about PR #$PR_NUMBER of $GITHUB_REPOSITORY..."
+      - name: Ensure PR is assigned to correct target
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
 
-        pr_resp=$(curl -X GET -s -H "Authorization: token $GITHUB_TOKEN" \
-                  -H "Accept: application/vnd.github.v3+json" \
-                  "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
-
-        # Source branch
-        HEAD_BRANCH=$(echo "$pr_resp" | jq -r .head.ref)
-
-        # Destination branch
-        BASE_BRANCH=$(echo "$pr_resp" | jq -r .base.ref)
-
-        # Destination branch
-        PR_TITLE=$(echo "$pr_resp" | jq -r .title)
-
-        if [[ "$HEAD_BRANCH" =~ ^(release|hotfix)\/ ]]; then
-          echo "Ensure merge to main"
-          if [[ "$BASE_BRANCH" != "master" ]]; then
-            echo "Change branch"
+          PR_NUMBER=$(jq -r ".pull_request.number" "$GITHUB_EVENT_PATH")
+          if [[ "$PR_NUMBER" == "null" ]]; then
+            PR_NUMBER=$(jq -r ".issue.number" "$GITHUB_EVENT_PATH")
           fi
-          exit 0
-        fi
-
-        comment() {
-           curl -s -X POST  -H "Authorization: token $GITHUB_TOKEN" \
-                  -H "Accept: application/vnd.github.v3+json" \
-                  -d "{\"body\": \"$1\"}" \
-                  https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments
-        }
-
-        if [[ "$HEAD_BRANCH" =~ ^(feature|bug)\/ ]]; then
-          echo "Ensure merge to develop"
-          if [[ "$BASE_BRANCH" != "develop" ]]; then
-            echo "::warning ::Trying to merge to wrong branch, $BASE_BRANCH, switching to develop"
-            comment "Wrong branch selected, switching to \`develop\`"
+          if [[ "$PR_NUMBER" == "null" ]]; then
+            echo "Failed to determine PR Number."
+            exit 1
           fi
-          exit 0
-        fi
+          echo "Collecting information about PR #$PR_NUMBER of $GITHUB_REPOSITORY..."
 
-        if [[ "$HEAD_BRANCH" == "develop" ]] && [[ "$BASE_BRANCH" == "main" ]]; then
-          echo "::error ::Merge from develop to main forbidden, closing PR"
-          curl -s -X POST  -H "Authorization: token $GITHUB_TOKEN" \
-                  -H "Accept: application/vnd.github.v3+json" \
-                  -d '{"body": "Direct merge from `develop` to `main` is not permitted! Create a `release/` branch first!"}' \
-                  https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments
+          pr_resp=$(curl -X GET -s -H "Authorization: token $GITHUB_TOKEN" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
 
-          NEW_TITLE=$( echo "$PR_TITLE" | sed 's/^\[REJECTED\]\s*//')
+          # Source branch
+          HEAD_BRANCH=$(echo "$pr_resp" | jq -r .head.ref)
 
-          curl -s \
-            -X PATCH \
-            -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
-            -d "{\"title\":\"[REJECTED] $NEW_TITLE\", \"state\": \"closed\"}"
-          exit 1
-        fi
+          # Destination branch
+          BASE_BRANCH=$(echo "$pr_resp" | jq -r .base.ref)
+
+          # Destination branch
+          PR_TITLE=$(echo "$pr_resp" | jq -r .title)
+
+          if [[ "$HEAD_BRANCH" =~ ^(release|hotfix)\/ ]]; then
+            echo "Ensure merge to main"
+            if [[ "$BASE_BRANCH" != "master" ]]; then
+              echo "Change branch"
+            fi
+            exit 0
+          fi
+
+          comment() {
+             curl -s -o /dev/null -X POST  -H "Authorization: token $GITHUB_TOKEN" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    -d "{\"body\": \"$1\"}" \
+                    https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments
+          }
+
+          if [[ "$HEAD_BRANCH" =~ ^(feature|bug)\/ ]]; then
+            echo "Ensure merge to develop"
+            if [[ "$BASE_BRANCH" != "develop" ]]; then
+              echo "::warning ::Trying to merge to wrong branch, $BASE_BRANCH, switching to develop"
+              comment "Wrong branch selected, switching to \`develop\`"
+
+              curl -s \
+                -X PATCH \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
+                -d '{"base": "develop"}'
+            fi
+            exit 0
+          fi
+
+          if [[ "$HEAD_BRANCH" == "develop" ]] && [[ "$BASE_BRANCH" == "main" ]]; then
+            echo "::error ::Merge from develop to main forbidden, closing PR"
+            curl -s -X POST  -H "Authorization: token $GITHUB_TOKEN" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    -d '{"body": "Direct merge from `develop` to `main` is not permitted! Create a `release/` branch first!"}' \
+                    https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments
+
+            NEW_TITLE=$( echo "$PR_TITLE" | sed 's/^\[REJECTED\]\s*//')
+
+            curl -s \
+              -X PATCH \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" \
+              -d "{\"title\":\"[REJECTED] $NEW_TITLE\", \"state\": \"closed\"}"
+            exit 1
+          fi
