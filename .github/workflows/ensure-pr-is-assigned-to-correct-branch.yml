@@ -83,7 +83,7 @@ jobs:
           curl \
             -X PATCH \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/$GITHUB_REPOSITORY/hello-world/pulls/$PR_NUMBER \
+            https://api.github.com/$GITHUB_REPOSITORY/pulls/$PR_NUMBER \
             -d '{"title":"[REJECTED] ${NEW_TITLE}", "state": "closed"}'
           exit 1
         fi
