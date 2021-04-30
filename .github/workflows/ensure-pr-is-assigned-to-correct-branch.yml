@@ -17,15 +17,52 @@
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
+    branches:
+    - "master"
+    - "develop"
+    - "release/**"
 
 jobs:
 
   ensure-pr-target:
     runs-on: "ubuntu-latest"
     steps:
-      - name: "Print hello"
-        run: echo "Hello"
-      
+    - name: Ensure PR is assigned to correct target
+      env:
+        GITHUB_TOKEN: ${{ secret.GITHUB_TOKEN }}
+      run: |
+        PR_NUMBER=$(jq -r ".pull_request.number" "$GITHUB_EVENT_PATH")
+        if [[ "$PR_NUMBER" == "null" ]]; then
+          PR_NUMBER=$(jq -r ".issue.number" "$GITHUB_EVENT_PATH")
+        fi
+        if [[ "$PR_NUMBER" == "null" ]]; then
+          echo "Failed to determine PR Number."
+          exit 1
+        fi
+        echo "Collecting information about PR #$PR_NUMBER of $GITHUB_REPOSITORY..."
 
-      - name: "Print environment"
-        run: set | grep GITHUB
+        pr_resp=$(curl -X GET -s -H "Authorization: token $GITHUB_TOKEN" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER")
+
+        # Source branch
+        HEAD_BRANCH=$(echo "$pr_resp" | jq -r .head.ref)
+
+        # Destination branch
+        BASE_BRANCH=$(echo "$pr_resp" | jq -r .base.ref)
+
+        if [[ "$HEAD_BRANCH" =~ ^(release|hotfix)\/ ]]; then
+          echo "Ensure merge to main"
+          if [[ "$BASE_BRANCH" != "master" ]]; then
+            echo "Change branch"
+          fi
+          exit 0
+        fi
+
+        if [[ "$HEAD_BRANCH" =~ ^(feature|bug)\/ ]]; then
+          echo "Ensure merge to develop"
+          if [[ "$BASE_BRANCH" != "develop" ]]; then
+            echo "Change branch to develop"
+          fi
+          exit 0
+        fi
