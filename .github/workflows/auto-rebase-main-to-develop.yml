@@ -29,7 +29,7 @@ jobs:
           # user_resp=$(curl -X GET -s -H "${GH_API_AUTH_HEADER}" -H "${GH_API_HEADER}" \
           #   "${GH_API_URI}/users/${USER_LOGIN}")
           PUSHER_NAME=$(jq -r ".pusher.name" "$GITHUB_EVENT_PATH")
-          PUSHER_EMAIL="$PUSHER_NAME@users.noreply.github.com""
+          PUSHER_EMAIL="$PUSHER_NAME@users.noreply.github.com"
 
           # Checkout or create a new develop branch
           git checkout develop || git checkout -b develop origin/main
