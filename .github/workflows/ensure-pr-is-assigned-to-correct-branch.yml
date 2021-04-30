@@ -31,7 +31,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        set -o xtrace
+        
         PR_NUMBER=$(jq -r ".pull_request.number" "$GITHUB_EVENT_PATH")
         if [[ "$PR_NUMBER" == "null" ]]; then
           PR_NUMBER=$(jq -r ".issue.number" "$GITHUB_EVENT_PATH")
@@ -69,7 +69,7 @@ jobs:
         fi
 
         if [[ "$HEAD_BRANCH" == "develop" ]] && [[ "$BASE_BRANCH" == "main" ]]; then
-          curl -X POST -s -H "Authorization: token $GITHUB_TOKEN" \
+          curl -X POST  -H "Authorization: token $GITHUB_TOKEN" \
                   -H "Accept: application/vnd.github.v3+json" \
                   -d '{"body": "Direct merge from `develop` to `main` is not permitted! Create a `release/` branch first!"}' \
                   "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/comments"
