@@ -24,21 +24,17 @@ jobs:
           GH_API_HEADER="Accept: application/vnd.github.v3+json"
           GH_API_AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
 
-          echo $GITHUB_EVENT_PATH
-          cat $GITHUB_EVENT_PATH
-          exit 0
           
-          USER_LOGIN=$(jq -r ".comment.user.login" "$GITHUB_EVENT_PATH")
-          user_resp=$(curl -X GET -s -H "${GH_API_AUTH_HEADER}" -H "${GH_API_HEADER}" \
-            "${GH_API_URI}/users/${USER_LOGIN}")
-
-          USER_NAME=$(echo "$user_resp" | jq -r ".name")
-          if [[ "$USER_NAME" == "null" ]]; then
-            USER_NAME=$USER_LOGIN
-          fi
-          USER_NAME="${USER_NAME} (Rebase PR Action)"
+          # USER_LOGIN=$(jq -r ".comment.user.login" "$GITHUB_EVENT_PATH")
+          # user_resp=$(curl -X GET -s -H "${GH_API_AUTH_HEADER}" -H "${GH_API_HEADER}" \
+          #   "${GH_API_URI}/users/${USER_LOGIN}")
+          PUSHER_NAME=$(jq -r ".pusher.name" "$GITHUB_EVENT_PATH")
+          PUSHER_EMAIL="$PUSHER_NAME@users.noreply.github.com""
 
           # Checkout or create a new develop branch
           git checkout develop || git checkout -b develop origin/main
           git rebase origin/main
+
+          git config --global user.email "$PUSHER_EMAIL"
+          git config --global user.name "$PUSHER_NAME (Rebase PR Action)"
           git push origin develop
