@@ -38,4 +38,4 @@ jobs:
           git config --global user.name "$PUSHER_NAME (Rebase PR Action)"
 
           git rebase origin/main
-          git push origin develop
+          git push origin develop --force
