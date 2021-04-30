@@ -67,3 +67,10 @@ jobs:
           fi
           exit 0
         fi
+
+        if [[ "$HEAD_BRANCH" == "develop" && "$BASE_BRANCH" == "main"]]; then
+          curl -X POST -s -H "Authorization: token $GITHUB_TOKEN" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  -d '{"body": "Direct merge from `develop` to `main` is not permitted! Create a `release/` branch first!"}' \
+                  "https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/comments"
+        fi
