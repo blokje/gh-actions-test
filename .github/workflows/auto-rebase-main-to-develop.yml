@@ -25,6 +25,7 @@ jobs:
           GH_API_AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
 
           echo $GITHUB_EVENT_PATH
+          cat $GITHUB_EVENT_PATH
           exit 0
           
           USER_LOGIN=$(jq -r ".comment.user.login" "$GITHUB_EVENT_PATH")
